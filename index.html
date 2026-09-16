@@ -1,0 +1,1549 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Moola</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=3">
+<link rel="icon" href="icons/icon-192.png?v=3">
+<meta name="theme-color" content="#2f7d4f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Moola">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+  :root{
+    --bg:#f3f8f2; --panel:#ffffff; --ink:#1c2b1e; --muted:#65786a;
+    --border:#dbe8dc; --accent:#2f7d4f; --accent-ink:#ffffff;
+    --good:#2f7d4f; --bad:#c0392b; --shadow:0 2px 8px rgba(30,60,40,.07);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f1d15; --panel:#17281d; --ink:#eaf3ea; --muted:#93ab98;
+      --border:#28402f; --accent:#4caf6e; --accent-ink:#0f1d15; --shadow:0 2px 10px rgba(0,0,0,.4); }
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
+  header{display:flex;align-items:center;justify-content:center;padding:calc(20px + env(safe-area-inset-top, 0px)) 24px 18px;background:radial-gradient(120% 180% at 50% -20%, color-mix(in srgb, var(--accent) 20%, transparent), var(--panel) 65%);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;overflow:hidden;}
+  header h1{font-size:19px;margin:0;letter-spacing:.2px;font-weight:700;display:flex;align-items:center;}
+  header h1 img{height:76px;width:auto;display:block;transform:rotate(-2deg);filter:drop-shadow(0 6px 10px color-mix(in srgb, var(--accent) 35%, transparent));}
+  .tabbar{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--panel);border-top:1px solid var(--border);padding:8px 6px calc(8px + env(safe-area-inset-bottom, 0px));z-index:10;}
+  .tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;color:var(--muted);cursor:pointer;padding:6px 4px;border-radius:12px;font-size:11.5px;font-family:inherit;}
+  .tabbar button .tab-icon{font-size:22px;line-height:1;}
+  .tabbar button.active{color:var(--accent);font-weight:700;}
+  main{max-width:1100px;margin:0 auto;padding:16px 16px calc(96px + env(safe-area-inset-bottom, 0px));}
+  .view{display:none;}
+  .view.active{display:block;}
+  .toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:10px;flex-wrap:wrap;}
+  .section-tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:10px;margin-bottom:8px;-webkit-overflow-scrolling:touch;}
+  .section-tab{flex:none;background:var(--panel);border:1px solid var(--border);color:var(--muted);padding:10px 18px;border-radius:22px;font-size:14px;cursor:pointer;white-space:nowrap;min-height:40px;}
+  .section-tab.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600;}
+  .btn{background:var(--accent);color:var(--accent-ink);border:none;border-radius:12px;padding:13px 22px;font-size:15px;font-weight:600;cursor:pointer;min-height:46px;}
+  .btn.secondary{background:var(--panel);color:var(--ink);border:1px solid var(--border);}
+  .btn.danger{background:var(--bad);color:#fff;}
+  .btn:active{opacity:.85;transform:scale(.98);}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);}
+  .table-scroll{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:14px;min-width:640px;}
+  th{text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:12px 14px;border-bottom:1px solid var(--border);}
+  td{padding:12px 14px;border-bottom:1px solid var(--border);vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  input,select{font:inherit;color:inherit;background:transparent;border:1px solid transparent;border-radius:8px;padding:8px 9px;width:100%;min-height:40px;}
+  input:hover,select:hover{border-color:var(--border);}
+  input:focus,select:focus{outline:none;border-color:var(--accent);background:var(--bg);}
+  .num{text-align:right;}
+  .muted{color:var(--muted);}
+  .thumb{width:40px;height:40px;border-radius:10px;object-fit:cover;cursor:pointer;border:1px solid var(--border);}
+  .thumb.empty{display:flex;align-items:center;justify-content:center;font-size:20px;background:var(--bg);}
+  .row-actions{display:flex;gap:2px;}
+  .row-actions button{background:none;border:none;cursor:pointer;color:var(--muted);font-size:18px;line-height:1;padding:0;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;}
+  .row-actions button:hover{color:var(--bad);background:var(--bg);}
+  .empty-state{padding:60px 20px;text-align:center;color:var(--muted);}
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;z-index:100;}
+  .modal-backdrop.active{display:flex;}
+  .modal{background:var(--panel);border-radius:20px;width:100%;max-width:560px;padding:26px;box-shadow:0 10px 40px rgba(0,0,0,.3);}
+  .modal h2{margin:0 0 18px;font-size:19px;}
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;}
+  .field input,.field select{border:1px solid var(--border);}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .grid3{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:14px;}
+  @media (max-width:420px){
+    .grid2,.grid3{grid-template-columns:1fr;}
+    .modal{padding:18px;}
+    .modal-backdrop{padding:16px 10px;}
+  }
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px;}
+  .custom-units{border:1px dashed var(--border);border-radius:12px;padding:12px;margin-top:8px;}
+  .custom-unit-row{display:grid;grid-template-columns:1fr 1fr auto auto;gap:8px;align-items:center;margin-bottom:8px;}
+  .link-btn{background:none;border:none;color:var(--accent);cursor:pointer;font-size:14px;padding:8px 0;font-weight:600;}
+  .photo-box{display:flex;align-items:center;gap:10px;margin-top:4px;}
+  .photo-preview{width:60px;height:60px;border-radius:8px;object-fit:cover;border:1px solid var(--border);}
+  video#camStream{width:100%;border-radius:10px;background:#000;max-height:360px;}
+  .cam-actions{display:flex;gap:8px;margin-top:10px;justify-content:center;}
+  .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:200;}
+  .lightbox.active{display:flex;}
+  .lightbox img{max-width:92vw;max-height:92vh;border-radius:8px;}
+  .recipe-lines{margin:14px 0;}
+  .recipe-line{display:grid;grid-template-columns:1.6fr 60px 80px 60px 22px;gap:6px;align-items:center;margin-bottom:8px;}
+  .recipe-line select,.recipe-line input,.recipe-line div{font-size:13px;min-width:0;}
+  .scan-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+  .scan-row select,.scan-row input{font-size:13px;border:1px solid var(--border);}
+  .scan-row .scan-name{flex:1 1 140px;}
+  .scan-row .scan-qty{width:56px;}
+  .scan-row .scan-unit{width:72px;}
+  .scan-row .scan-price{width:72px;}
+  .scan-row .scan-section{flex:1 1 110px;}
+  .scan-row.excluded{opacity:0.4;}
+  .scan-loading{display:flex;flex-direction:column;align-items:center;gap:10px;padding:30px 10px;color:var(--muted);font-size:14px;}
+  .totals{border-top:1px solid var(--border);margin-top:16px;padding-top:14px;display:flex;flex-direction:column;gap:6px;font-size:14px;}
+  .totals .big{font-size:22px;font-weight:700;color:var(--accent);}
+  .totals-row{display:flex;justify-content:space-between;}
+  .pct-pill{background:var(--bg);border-radius:20px;padding:2px 10px;font-size:12px;}
+  .toast{position:fixed;bottom:calc(96px + env(safe-area-inset-bottom, 0px));left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 20px;border-radius:12px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:300;max-width:88vw;white-space:pre-line;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.25);}
+  .toast.toast-warning{background:var(--bad);color:#fff;font-weight:600;}
+  .toast.show{opacity:1;}
+  [hidden]{display:none!important;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1><img src="icons/header-logo.png" alt="Moola"></h1>
+</header>
+
+<main>
+
+  <!-- INGREDIENTS -->
+  <section id="view-ingredients" class="view active">
+    <div class="section-tabs" id="ingredient-section-tabs"></div>
+    <div class="toolbar">
+      <div class="muted" id="ing-count"></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <select id="ing-sort" style="border:1px solid var(--border);min-height:40px;width:auto;font-size:13px;">
+          <option value="name-asc">Sort: Name (A–Z)</option>
+          <option value="name-desc">Sort: Name (Z–A)</option>
+          <option value="cost-asc">Sort: Cost/unit (low→high)</option>
+          <option value="cost-desc">Sort: Cost/unit (high→low)</option>
+          <option value="price-asc">Sort: Price (low→high)</option>
+          <option value="price-desc">Sort: Price (high→low)</option>
+        </select>
+        <button class="btn secondary" id="btn-scan-receipt">📷 Scan Receipt</button>
+        <button class="btn" id="btn-add-ingredient">+ Add Ingredient</button>
+      </div>
+      <input type="file" id="scan-receipt-file" accept="image/*" capture="environment" hidden>
+    </div>
+    <div class="card">
+      <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Photo</th><th>Name</th><th>Purchase</th><th>Price</th><th>Cost / unit</th><th>Custom units</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="ingredients-body"></tbody>
+      </table>
+      </div>
+      <div class="empty-state" id="ingredients-empty" hidden>No ingredients in this section yet.</div>
+    </div>
+  </section>
+
+  <!-- MENU ITEMS -->
+  <section id="view-menu" class="view">
+    <div class="toolbar">
+      <div class="muted" id="menu-count"></div>
+      <button class="btn" id="btn-add-menu">+ Add Menu Item</button>
+    </div>
+    <div class="card">
+      <div class="table-scroll">
+      <table>
+        <thead><tr><th>Name</th><th>Cost of goods</th><th>Target price</th><th>Actual price</th><th>vs Target</th><th>Food cost %</th><th></th></tr></thead>
+        <tbody id="menu-body"></tbody>
+      </table>
+      </div>
+      <div class="empty-state" id="menu-empty" hidden>No menu items yet. Add one, then build its recipe from your ingredients.</div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="view-settings" class="view">
+    <div class="card" style="padding:20px;max-width:480px;">
+      <div class="field">
+        <label>Default target food cost %</label>
+        <input type="number" id="setting-target-pct" min="1" max="100" step="0.5">
+      </div>
+      <p class="muted" style="font-size:13px;">Used as the default when pricing new menu items. Target price = Cost of Goods ÷ (this % ÷ 100).</p>
+      <hr style="border:none;border-top:1px solid var(--border);margin:18px 0;">
+      <div class="field">
+        <label>Ingredient sections (tabs)</label>
+        <div id="sections-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px;"></div>
+        <div style="display:flex;gap:8px;">
+          <input id="new-section-name" placeholder="e.g. Bakery" style="border:1px solid var(--border);">
+          <button class="btn secondary" id="btn-add-section" type="button">Add</button>
+        </div>
+      </div>
+      <p class="muted" style="font-size:13px;">These become the tabs on the Ingredients page. Renaming a section updates it everywhere; removing one moves its ingredients to "Uncategorized".</p>
+      <hr style="border:none;border-top:1px solid var(--border);margin:18px 0;">
+      <div class="field">
+        <label>Anthropic API key (for receipt scanning)</label>
+        <div id="config-status" class="muted" style="font-size:13px;margin-bottom:6px;">Checking…</div>
+        <div style="display:flex;gap:8px;">
+          <input id="anthropic-key-input" type="password" placeholder="sk-ant-…" style="border:1px solid var(--border);flex:1;">
+          <button class="btn secondary" id="btn-save-key" type="button">Save</button>
+        </div>
+      </div>
+      <p class="muted" style="font-size:13px;">The key is stored only in this device's browser storage, never synced anywhere. Only the receipt photo you scan is sent to Anthropic, directly from this device — everything else in the app stays fully offline.</p>
+      <hr style="border:none;border-top:1px solid var(--border);margin:18px 0;">
+      <div class="field">
+        <label>Backup</label>
+        <div style="display:flex;gap:8px;">
+          <button class="btn secondary" id="btn-export">Export data (.json)</button>
+          <button class="btn secondary" id="btn-import">Import data</button>
+          <input type="file" id="import-file" accept="application/json" hidden>
+        </div>
+      </div>
+      <p class="muted" style="font-size:13px;">Everything is stored only in this browser, on this device. Exporting lets you back it up or move it to another device — including importing a backup exported from the Mac version.</p>
+    </div>
+  </section>
+
+</main>
+
+<nav class="tabbar">
+  <button data-view="ingredients" class="active"><span class="tab-icon">🥕</span>Ingredients</button>
+  <button data-view="menu"><span class="tab-icon">🍔</span>Menu Items</button>
+  <button data-view="settings"><span class="tab-icon">⚙️</span>Settings</button>
+</nav>
+
+<!-- Ingredient modal -->
+<div class="modal-backdrop" id="modal-ingredient">
+  <div class="modal">
+    <h2 id="ingredient-modal-title">Add Ingredient</h2>
+    <input type="hidden" id="ing-id">
+    <div class="field"><label>Name</label><input id="ing-name" placeholder="e.g. Tomato"></div>
+    <div class="field"><label>Section</label><select id="ing-section"></select></div>
+    <div class="field">
+      <label>Type</label>
+      <select id="ing-kind">
+        <option value="purchased">Purchased ingredient</option>
+        <option value="recipe">Recipe (made from other ingredients)</option>
+      </select>
+    </div>
+
+    <div id="purchased-fields">
+      <div class="field">
+        <label>Receipt name <span class="muted">(optional)</span></label>
+        <input id="ing-receipt-name" placeholder="exact text as it appears on the receipt">
+      </div>
+      <p class="muted" style="font-size:12px;margin-top:-10px;">Used to auto-match this ingredient on future scans, even after you rename it above.</p>
+      <div class="grid3">
+        <div class="field"><label>Unit type</label>
+          <select id="ing-category">
+            <option value="weight">Weight</option>
+            <option value="volume">Volume</option>
+            <option value="count">Count</option>
+          </select>
+        </div>
+        <div class="field"><label>Purchase qty</label><input id="ing-qty" type="number" step="any" placeholder="1"></div>
+        <div class="field"><label>Purchase unit</label><select id="ing-unit"></select></div>
+      </div>
+      <div class="field"><label>Purchase price ($)</label><input id="ing-price" type="number" step="0.01" placeholder="0.00"></div>
+    </div>
+
+    <div id="recipe-fields">
+      <div class="field">
+        <label>Made from <span class="muted">(pulls cost from your ingredient list)</span></label>
+        <div class="recipe-lines" id="sub-recipe-lines"></div>
+        <button class="link-btn" id="btn-add-sub-line" type="button">+ Add ingredient line</button>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Yield qty</label><input id="ing-yield-qty" type="number" step="any" placeholder="e.g. 64"></div>
+        <div class="field"><label>Yield unit</label><select id="ing-yield-unit"></select></div>
+      </div>
+      <p class="muted" style="font-size:13px;margin-top:-6px;">How much this recipe makes in total — e.g. "64 fl oz" if it fills a half-gallon jug.</p>
+      <div class="totals" style="margin-top:8px;">
+        <div class="totals-row"><span>Batch cost</span><span id="sub-recipe-batch-cost" class="big">$0.00</span></div>
+        <div class="totals-row"><span>Cost per unit</span><span id="sub-recipe-unit-cost">—</span></div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Custom units <span class="muted">(optional — e.g. "slice" = 18 g)</span></label>
+      <div class="custom-units" id="custom-units-list"></div>
+      <button class="link-btn" id="btn-add-custom-unit">+ Add custom unit</button>
+    </div>
+    <div class="field" id="ing-photo-field">
+      <label>Receipt photo</label>
+      <div class="photo-box">
+        <img id="ing-photo-preview" class="photo-preview" hidden>
+        <div class="thumb empty" id="ing-photo-placeholder" style="width:60px;height:60px;">none</div>
+        <button class="btn secondary" id="btn-take-photo" type="button">📷 Camera</button>
+        <button class="btn secondary" id="btn-upload-photo" type="button">Choose Photo</button>
+        <button class="link-btn" id="btn-remove-photo" type="button" hidden>Remove</button>
+        <input type="file" id="ing-photo-camera" accept="image/*" capture="environment" hidden>
+        <input type="file" id="ing-photo-file" accept="image/*" hidden>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn secondary" id="btn-cancel-ingredient">Cancel</button>
+      <button class="btn" id="btn-save-ingredient">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Menu item modal -->
+<div class="modal-backdrop" id="modal-menu">
+  <div class="modal" style="max-width:640px;">
+    <h2 id="menu-modal-title">Add Menu Item</h2>
+    <input type="hidden" id="menu-id">
+    <div class="grid2">
+      <div class="field"><label>Name</label><input id="menu-name" placeholder="e.g. Hamburger"></div>
+      <div class="field"><label>Target food cost %</label><input id="menu-target-pct" type="number" step="0.5"></div>
+    </div>
+    <div class="recipe-lines" id="recipe-lines"></div>
+    <button class="link-btn" id="btn-add-line">+ Add ingredient line</button>
+    <div class="field" style="margin-top:12px;"><label>Actual menu price ($) <span class="muted">optional</span></label><input id="menu-actual-price" type="number" step="0.01" placeholder="e.g. 9.99"></div>
+    <div class="totals">
+      <div class="totals-row"><span>Cost of goods</span><span id="calc-cogs" class="big">$0.00</span></div>
+      <div class="totals-row"><span>Target menu price</span><span id="calc-target">$0.00</span></div>
+      <div class="totals-row" id="row-variance" hidden><span>vs Target price</span><span id="calc-variance-pct" class="pct-pill">—</span></div>
+      <div class="totals-row" id="row-actual" hidden><span>Actual food cost %</span><span id="calc-actual-pct" class="pct-pill">—</span></div>
+      <div class="totals-row" id="row-margin" hidden><span>Gross margin</span><span id="calc-margin">—</span></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn secondary" id="btn-cancel-menu">Cancel</button>
+      <button class="btn" id="btn-save-menu">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Scan review modal -->
+<div class="modal-backdrop" id="modal-scan-review">
+  <div class="modal" style="max-width:640px;">
+    <h2>Review Scanned Items</h2>
+    <p class="muted" style="font-size:13px;margin-top:-8px;">Uncheck anything misread, fix values, then add. Section defaults to whichever tab you scanned from.</p>
+    <div id="scan-review-rows"></div>
+    <div class="modal-actions">
+      <button class="btn secondary" id="btn-cancel-scan-review">Cancel</button>
+      <button class="btn" id="btn-add-scanned">Add Selected</button>
+    </div>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox"><img id="lightbox-img"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+"use strict";
+
+/* ---------- units ---------- */
+const UNIT_INFO = {
+  g:    {cat:'weight', toBase:1,            label:'g'},
+  kg:   {cat:'weight', toBase:1000,         label:'kg'},
+  oz:   {cat:'weight', toBase:28.349523125, label:'oz'},
+  lb:   {cat:'weight', toBase:453.59237,    label:'lb'},
+  ml:   {cat:'volume', toBase:1,            label:'ml'},
+  l:    {cat:'volume', toBase:1000,         label:'L'},
+  tsp:  {cat:'volume', toBase:4.92892,      label:'tsp'},
+  tbsp: {cat:'volume', toBase:14.7868,      label:'tbsp'},
+  floz: {cat:'volume', toBase:29.5735,      label:'fl oz'},
+  cup:  {cat:'volume', toBase:236.588,      label:'cup'},
+  pt:   {cat:'volume', toBase:473.176,      label:'pt'},
+  qt:   {cat:'volume', toBase:946.353,      label:'qt'},
+  gal:  {cat:'volume', toBase:3785.41,      label:'gal'},
+  each: {cat:'count',  toBase:1,            label:'each'},
+};
+const BASE_UNIT = {weight:'g', volume:'ml', count:'each'};
+const CATEGORY_UNITS = cat => Object.entries(UNIT_INFO).filter(([,v])=>v.cat===cat).map(([k])=>k);
+
+function ingredientCostPerBase(ing, ancestors){
+  ancestors = ancestors || [];
+  if(!ing || ancestors.includes(ing.id)) return 0;
+  if(ing.kind === 'recipe'){
+    const nextAncestors = [...ancestors, ing.id];
+    const batchCost = (ing.recipeLines||[]).reduce((sum,line)=>{
+      const subIng = ingredients.find(i=>i.id===line.ingredientId);
+      if(!subIng) return sum;
+      return sum + lineCost(subIng, line.qty, line.unit, nextAncestors);
+    },0);
+    const toBase = UNIT_INFO[ing.yieldUnit]?.toBase || 1;
+    const baseQty = (Number(ing.yieldQty)||0) * toBase;
+    return baseQty > 0 ? batchCost / baseQty : 0;
+  }
+  const qty = Number(ing.purchaseQty)||0;
+  const price = Number(ing.purchasePrice)||0;
+  const toBase = UNIT_INFO[ing.purchaseUnit]?.toBase || 1;
+  const baseQty = qty * toBase;
+  return baseQty > 0 ? price / baseQty : 0;
+}
+function unitsAvailableFor(ing){
+  const std = CATEGORY_UNITS(ing.category);
+  const custom = (ing.customUnits||[]).map(c=>c.name);
+  return [...std, ...custom];
+}
+function lineCost(ing, qty, unit, ancestors){
+  qty = Number(qty)||0;
+  const costPerBase = ingredientCostPerBase(ing, ancestors);
+  let baseAmount;
+  if (UNIT_INFO[unit] && UNIT_INFO[unit].cat === ing.category){
+    baseAmount = qty * UNIT_INFO[unit].toBase;
+  } else {
+    const cu = (ing.customUnits||[]).find(c=>c.name===unit);
+    baseAmount = cu ? qty * Number(cu.baseAmount||0) : 0;
+  }
+  return baseAmount * costPerBase;
+}
+function transitiveDeps(ingredientId, seen){
+  seen = seen || new Set();
+  if(seen.has(ingredientId)) return seen;
+  seen.add(ingredientId);
+  const ing = ingredients.find(i=>i.id===ingredientId);
+  if(ing && ing.kind==='recipe'){
+    for(const line of ing.recipeLines||[]) transitiveDeps(line.ingredientId, seen);
+  }
+  return seen;
+}
+function fmt(n){ return '$' + (Number(n)||0).toFixed(2); }
+
+/* ---------- local storage (IndexedDB) ---------- */
+const DB_NAME = 'moola-db';
+const DB_VERSION = 1;
+let dbPromise = null;
+function openDB(){
+  if(dbPromise) return dbPromise;
+  dbPromise = new Promise((resolve, reject)=>{
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = ()=>{
+      const db = req.result;
+      if(!db.objectStoreNames.contains('ingredients')) db.createObjectStore('ingredients', {keyPath:'id'});
+      if(!db.objectStoreNames.contains('menuItems')) db.createObjectStore('menuItems', {keyPath:'id'});
+      if(!db.objectStoreNames.contains('settings')) db.createObjectStore('settings', {keyPath:'key'});
+      if(!db.objectStoreNames.contains('photos')) db.createObjectStore('photos', {keyPath:'id'});
+      if(!db.objectStoreNames.contains('config')) db.createObjectStore('config', {keyPath:'key'});
+    };
+    req.onsuccess = ()=>resolve(req.result);
+    req.onerror = ()=>reject(req.error);
+  });
+  return dbPromise;
+}
+function idbReq(req){
+  return new Promise((resolve,reject)=>{
+    req.onsuccess = ()=>resolve(req.result);
+    req.onerror = ()=>reject(req.error);
+  });
+}
+async function idbGetAll(storeName){
+  const db = await openDB();
+  return idbReq(db.transaction(storeName,'readonly').objectStore(storeName).getAll());
+}
+async function idbGet(storeName, key){
+  const db = await openDB();
+  return idbReq(db.transaction(storeName,'readonly').objectStore(storeName).get(key));
+}
+async function idbPut(storeName, value){
+  const db = await openDB();
+  return idbReq(db.transaction(storeName,'readwrite').objectStore(storeName).put(value));
+}
+async function idbDelete(storeName, key){
+  const db = await openDB();
+  return idbReq(db.transaction(storeName,'readwrite').objectStore(storeName).delete(key));
+}
+async function idbClear(storeName){
+  const db = await openDB();
+  return idbReq(db.transaction(storeName,'readwrite').objectStore(storeName).clear());
+}
+async function getApiKey(){
+  const rec = await idbGet('config','apiKey');
+  return rec ? rec.value : null;
+}
+async function setApiKey(key){
+  await idbPut('config', {key:'apiKey', value:key});
+}
+function blobToDataURL(blob){
+  return new Promise((resolve,reject)=>{
+    const reader = new FileReader();
+    reader.onload = ()=>resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+async function dataURLToBlob(dataURL){
+  const res = await fetch(dataURL);
+  return res.blob();
+}
+async function idbExportData(){
+  const ingredients = await idbGetAll('ingredients');
+  const menuItems = await idbGetAll('menuItems');
+  const settingsRec = await idbGet('settings','settings');
+  const photoRecs = await idbGetAll('photos');
+  const photos = await Promise.all(photoRecs.map(async p=>({id:p.id, data: await blobToDataURL(p.blob)})));
+  return {ingredients, menuItems, settings: settingsRec ? settingsRec.value : {targetPct:30, sections: DEFAULT_SECTIONS.slice()}, photos};
+}
+async function idbImportData(data){
+  await idbClear('ingredients'); await idbClear('menuItems'); await idbClear('photos');
+  for(const ing of data.ingredients||[]) await idbPut('ingredients', ing);
+  for(const item of data.menuItems||[]) await idbPut('menuItems', item);
+  await idbPut('settings', {key:'settings', value: data.settings || {targetPct:30, sections: DEFAULT_SECTIONS.slice()}});
+  for(const p of data.photos||[]){
+    const blob = await dataURLToBlob(p.data);
+    await idbPut('photos', {id:p.id, blob});
+  }
+  photoURLCache.forEach(url=>URL.revokeObjectURL(url));
+  photoURLCache.clear();
+}
+
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'id-'+Date.now()+'-'+Math.random().toString(16).slice(2));
+
+/* ---------- state ---------- */
+const DEFAULT_SECTIONS = ['Produce','Proteins','Condiments','Dry Goods','Dairy'];
+const UNSECTIONED = 'Uncategorized';
+let ingredients = [];
+let menuItems = [];
+let settings = { targetPct: 30, sections: DEFAULT_SECTIONS.slice() };
+let activeSection = 'All';
+let ingredientSort = 'name-asc';
+const INGREDIENT_SORTS = {
+  'name-asc':  (a,b)=>a.name.localeCompare(b.name),
+  'name-desc': (a,b)=>b.name.localeCompare(a.name),
+  'cost-asc':  (a,b)=>ingredientCostPerBase(a)-ingredientCostPerBase(b),
+  'cost-desc': (a,b)=>ingredientCostPerBase(b)-ingredientCostPerBase(a),
+  'price-asc':  (a,b)=>(a.kind==='recipe'?0:Number(a.purchasePrice)||0)-(b.kind==='recipe'?0:Number(b.purchasePrice)||0),
+  'price-desc': (a,b)=>(b.kind==='recipe'?0:Number(b.purchasePrice)||0)-(a.kind==='recipe'?0:Number(a.purchasePrice)||0),
+};
+document.getElementById('ing-sort').addEventListener('change', e=>{ ingredientSort = e.target.value; renderIngredients(); });
+
+async function loadAll(){
+  ingredients = await idbGetAll('ingredients');
+  menuItems = await idbGetAll('menuItems');
+  const settingsRec = await idbGet('settings','settings');
+  settings = settingsRec ? settingsRec.value : { targetPct: 30 };
+  if(!Array.isArray(settings.sections) || settings.sections.length===0){
+    settings.sections = DEFAULT_SECTIONS.slice();
+  }
+}
+
+/* ---------- toast ---------- */
+let toastTimer;
+function toast(msg, opts){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.toggle('toast-warning', !!(opts && opts.warning));
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.classList.remove('show'), (opts && opts.duration) || 1800);
+}
+
+/* ---------- nav ---------- */
+document.querySelectorAll('nav button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('view-'+btn.dataset.view).classList.add('active');
+  });
+});
+
+/* ---------- photo helpers ---------- */
+const photoURLCache = new Map();
+async function photoURL(id){
+  if(!id) return null;
+  if(photoURLCache.has(id)) return photoURLCache.get(id);
+  const rec = await idbGet('photos', id);
+  if(!rec) return null;
+  const url = URL.createObjectURL(rec.blob);
+  photoURLCache.set(id, url);
+  return url;
+}
+async function savePhotoBlob(blob){
+  const id = uid();
+  await idbPut('photos', {id, blob});
+  return id;
+}
+
+document.getElementById('lightbox').addEventListener('click', ()=>{
+  document.getElementById('lightbox').classList.remove('active');
+});
+async function showLightbox(id){
+  const url = await photoURL(id);
+  if(!url) return;
+  document.getElementById('lightbox-img').src = url;
+  document.getElementById('lightbox').classList.add('active');
+}
+
+/* ---------- Ingredients rendering ---------- */
+function ingredientSection(ing){
+  return (ing.section && settings.sections.includes(ing.section)) ? ing.section : UNSECTIONED;
+}
+const SECTION_ICON_RULES = [
+  [/produce|veg|fruit|greens/i, '🥕'],
+  [/protein|meat|poultry|seafood|fish/i, '🥩'],
+  [/condiment|sauce|spice/i, '🧂'],
+  [/dry\s*good|grain|bread|bak/i, '🌾'],
+  [/dairy|milk|cheese/i, '🧀'],
+];
+function sectionIcon(sectionName){
+  for(const [pattern, icon] of SECTION_ICON_RULES){
+    if(pattern.test(sectionName)) return icon;
+  }
+  return '🍽️';
+}
+function renderIngredientTabs(){
+  const container = document.getElementById('ingredient-section-tabs');
+  container.innerHTML = '';
+  const hasUnsectioned = ingredients.some(i => ingredientSection(i)===UNSECTIONED);
+  const tabs = ['All', ...settings.sections, ...(hasUnsectioned ? [UNSECTIONED] : [])];
+  if(!tabs.includes(activeSection)) activeSection = 'All';
+  tabs.forEach(name=>{
+    const btn = document.createElement('button');
+    btn.className = 'section-tab' + (activeSection===name ? ' active':'');
+    btn.textContent = name;
+    btn.addEventListener('click', ()=>{ activeSection = name; renderIngredients(); });
+    container.appendChild(btn);
+  });
+}
+async function renderIngredients(){
+  renderIngredientTabs();
+  const body = document.getElementById('ingredients-body');
+  body.innerHTML = '';
+  const filtered = activeSection==='All' ? ingredients : ingredients.filter(i=>ingredientSection(i)===activeSection);
+  document.getElementById('ing-count').textContent = filtered.length + (filtered.length===1?' ingredient':' ingredients');
+  document.getElementById('ingredients-empty').hidden = filtered.length>0;
+
+  for(const ing of filtered.slice().sort(INGREDIENT_SORTS[ingredientSort] || INGREDIENT_SORTS['name-asc'])){
+    const tr = document.createElement('tr');
+    const costPerBase = ingredientCostPerBase(ing);
+    const baseLabel = UNIT_INFO[BASE_UNIT[ing.category]].label;
+
+    const iconTd = document.createElement('td');
+    const iconDiv = document.createElement('div');
+    iconDiv.className='thumb empty';
+    iconDiv.textContent=sectionIcon(ingredientSection(ing));
+    iconTd.appendChild(iconDiv);
+    tr.appendChild(iconTd);
+
+    const nameTd = document.createElement('td');
+    nameTd.textContent = ing.name;
+    if(ing.kind==='recipe'){
+      const badge = document.createElement('span');
+      badge.className='pct-pill'; badge.style.marginLeft='8px'; badge.style.fontSize='11px'; badge.textContent='🥣 recipe';
+      nameTd.appendChild(badge);
+    }
+    tr.appendChild(nameTd);
+
+    const purchaseTd = document.createElement('td');
+    purchaseTd.className='muted';
+    purchaseTd.textContent = ing.kind==='recipe'
+      ? `Yield: ${ing.yieldQty} ${UNIT_INFO[ing.yieldUnit].label}`
+      : `${ing.purchaseQty} ${UNIT_INFO[ing.purchaseUnit].label}`;
+    tr.appendChild(purchaseTd);
+
+    const priceTd = document.createElement('td'); priceTd.className='num';
+    if(ing.kind==='recipe'){
+      const batchCost = (ing.recipeLines||[]).reduce((sum,line)=>{
+        const subIng = ingredients.find(i=>i.id===line.ingredientId);
+        return subIng ? sum + lineCost(subIng, line.qty, line.unit) : sum;
+      },0);
+      priceTd.textContent = fmt(batchCost);
+      priceTd.title = 'Computed batch cost';
+      priceTd.className += ' muted';
+    } else {
+      priceTd.textContent = fmt(ing.purchasePrice);
+    }
+    tr.appendChild(priceTd);
+
+    const costTd = document.createElement('td'); costTd.className='num';
+    costTd.textContent = `${fmt(costPerBase)} / ${baseLabel}`;
+    tr.appendChild(costTd);
+
+    const customTd = document.createElement('td'); customTd.className='muted';
+    customTd.textContent = (ing.customUnits||[]).map(c=>`${c.name}=${c.baseAmount}${baseLabel}`).join(', ') || '—';
+    tr.appendChild(customTd);
+
+    const actionsTd = document.createElement('td'); actionsTd.className='row-actions';
+    const editBtn = document.createElement('button'); editBtn.textContent='✏️';
+    editBtn.addEventListener('click', ()=>openIngredientModal(ing));
+    const delBtn = document.createElement('button'); delBtn.textContent='🗑';
+    delBtn.addEventListener('click', async ()=>{
+      const usedByRecipes = ingredients.filter(i=>i.kind==='recipe' && (i.recipeLines||[]).some(l=>l.ingredientId===ing.id)).map(i=>i.name);
+      const usedByMenu = menuItems.filter(m=>(m.lines||[]).some(l=>l.ingredientId===ing.id)).map(m=>m.name);
+      const usages = [...usedByRecipes, ...usedByMenu];
+      const warning = usages.length ? `\n\nUsed in: ${usages.join(', ')} — deleting will remove it from their cost calculations.` : '';
+      if(confirm(`Delete "${ing.name}"?${warning}`)){
+        await idbDelete('ingredients', ing.id);
+        ingredients = ingredients.filter(i=>i.id!==ing.id);
+        renderIngredients();
+        renderMenu();
+        toast('Ingredient deleted');
+      }
+    });
+    actionsTd.appendChild(editBtn); actionsTd.appendChild(delBtn);
+    tr.appendChild(actionsTd);
+
+    body.appendChild(tr);
+  }
+}
+
+/* ---------- Ingredient modal ---------- */
+let editingPhotoId = null;
+let pendingCustomUnits = [];
+let pendingSubLines = [];
+
+function populateYieldUnitSelect(selectedUnit){
+  const select = document.getElementById('ing-yield-unit');
+  select.innerHTML = Object.keys(UNIT_INFO).map(u=>
+    `<option value="${u}" ${u===selectedUnit?'selected':''}>${UNIT_INFO[u].label}</option>`
+  ).join('');
+}
+
+function renderSubRecipeLines(){
+  const container = document.getElementById('sub-recipe-lines');
+  container.innerHTML = '';
+  const editingId = document.getElementById('ing-id').value;
+  const exclude = new Set();
+  if(editingId){
+    exclude.add(editingId);
+    for(const other of ingredients){
+      if(other.id!==editingId && transitiveDeps(other.id).has(editingId)) exclude.add(other.id);
+    }
+  }
+  pendingSubLines.forEach((line, idx)=>{
+    const ing = ingredients.find(i=>i.id===line.ingredientId);
+    const row = document.createElement('div'); row.className='recipe-line';
+
+    const sel = document.createElement('select');
+    sel.innerHTML = `<option value="">Select ingredient…</option>` + ingredientOptionsHTML(line.ingredientId, exclude);
+    sel.addEventListener('change', e=>{ line.ingredientId = e.target.value; line.unit=''; renderSubRecipeLines(); updateSubRecipePreview(); });
+
+    const qty = document.createElement('input'); qty.type='number'; qty.step='any'; qty.placeholder='qty'; qty.value = line.qty||'';
+    qty.addEventListener('input', e=>{ line.qty=e.target.value; updateSubRecipePreview(); });
+
+    const unitSel = document.createElement('select');
+    unitSel.innerHTML = ing ? unitOptionsHTML(ing, line.unit) : '';
+    unitSel.addEventListener('change', e=>{ line.unit=e.target.value; updateSubRecipePreview(); });
+
+    const costSpan = document.createElement('div'); costSpan.className='muted num';
+    costSpan.textContent = ing ? fmt(lineCost(ing, line.qty, line.unit || unitsAvailableFor(ing)[0])) : '';
+
+    const rmBtn = document.createElement('button'); rmBtn.className='link-btn'; rmBtn.textContent='✕';
+    rmBtn.addEventListener('click', ()=>{ pendingSubLines.splice(idx,1); renderSubRecipeLines(); updateSubRecipePreview(); });
+
+    row.appendChild(sel); row.appendChild(qty); row.appendChild(unitSel); row.appendChild(costSpan); row.appendChild(rmBtn);
+    container.appendChild(row);
+  });
+}
+document.getElementById('btn-add-sub-line').addEventListener('click', ()=>{
+  pendingSubLines.push({ingredientId:'', qty:'', unit:''});
+  renderSubRecipeLines();
+});
+
+function updateSubRecipePreview(){
+  const batchCost = pendingSubLines.reduce((sum,line)=>{
+    const ing = ingredients.find(i=>i.id===line.ingredientId);
+    if(!ing || !line.unit) return sum;
+    return sum + lineCost(ing, line.qty, line.unit);
+  },0);
+  document.getElementById('sub-recipe-batch-cost').textContent = fmt(batchCost);
+  const yieldQty = Number(document.getElementById('ing-yield-qty').value)||0;
+  const yieldUnit = document.getElementById('ing-yield-unit').value;
+  const unitCostEl = document.getElementById('sub-recipe-unit-cost');
+  if(yieldQty>0 && yieldUnit){
+    unitCostEl.textContent = `${fmt(batchCost/yieldQty)} / ${UNIT_INFO[yieldUnit].label}`;
+  } else {
+    unitCostEl.textContent = '—';
+  }
+}
+document.getElementById('ing-yield-qty').addEventListener('input', updateSubRecipePreview);
+document.getElementById('ing-yield-unit').addEventListener('change', ()=>{ updateSubRecipePreview(); renderCustomUnitsEditor(); });
+
+function setIngredientKindUI(kind){
+  document.getElementById('purchased-fields').hidden = kind==='recipe';
+  document.getElementById('recipe-fields').hidden = kind!=='recipe';
+  document.getElementById('ing-photo-field').hidden = kind==='recipe';
+}
+document.getElementById('ing-kind').addEventListener('change', e=>setIngredientKindUI(e.target.value));
+
+function populateUnitSelect(select, category){
+  select.innerHTML = '';
+  CATEGORY_UNITS(category).forEach(u=>{
+    const opt = document.createElement('option');
+    opt.value = u; opt.textContent = UNIT_INFO[u].label;
+    select.appendChild(opt);
+  });
+}
+document.getElementById('ing-category').addEventListener('change', e=>{
+  populateUnitSelect(document.getElementById('ing-unit'), e.target.value);
+  renderCustomUnitsEditor();
+});
+
+function renderCustomUnitsEditor(){
+  const kind = document.getElementById('ing-kind').value;
+  const cat = kind==='recipe'
+    ? (UNIT_INFO[document.getElementById('ing-yield-unit').value]?.cat || 'weight')
+    : document.getElementById('ing-category').value;
+  const baseLabel = UNIT_INFO[BASE_UNIT[cat]].label;
+  const list = document.getElementById('custom-units-list');
+  list.innerHTML = '';
+  if(pendingCustomUnits.length===0){
+    const p = document.createElement('div'); p.className='muted'; p.style.fontSize='13px'; p.textContent='No custom units defined.';
+    list.appendChild(p);
+  }
+  pendingCustomUnits.forEach((cu, idx)=>{
+    const row = document.createElement('div'); row.className='custom-unit-row';
+    const nameInput = document.createElement('input'); nameInput.placeholder='name (e.g. slice)'; nameInput.value=cu.name||'';
+    nameInput.addEventListener('input', e=>cu.name=e.target.value);
+    const amtInput = document.createElement('input'); amtInput.type='number'; amtInput.step='any'; amtInput.placeholder='amount'; amtInput.value=cu.baseAmount||'';
+    amtInput.addEventListener('input', e=>cu.baseAmount=e.target.value);
+    const unitLabel = document.createElement('span'); unitLabel.className='muted'; unitLabel.style.fontSize='13px'; unitLabel.textContent = baseLabel;
+    const rmBtn = document.createElement('button'); rmBtn.className='link-btn'; rmBtn.textContent='✕';
+    rmBtn.addEventListener('click', ()=>{ pendingCustomUnits.splice(idx,1); renderCustomUnitsEditor(); });
+    row.appendChild(nameInput); row.appendChild(amtInput); row.appendChild(unitLabel); row.appendChild(rmBtn);
+    list.appendChild(row);
+  });
+}
+document.getElementById('btn-add-custom-unit').addEventListener('click', ()=>{
+  pendingCustomUnits.push({name:'', baseAmount:''});
+  renderCustomUnitsEditor();
+});
+
+function populateSectionSelect(selectedSection){
+  const select = document.getElementById('ing-section');
+  select.innerHTML = settings.sections.map(s=>`<option value="${s}">${s}</option>`).join('');
+  select.value = (selectedSection && settings.sections.includes(selectedSection)) ? selectedSection : settings.sections[0];
+}
+function openIngredientModal(ing){
+  document.getElementById('ingredient-modal-title').textContent = ing ? 'Edit Ingredient' : 'Add Ingredient';
+  document.getElementById('ing-id').value = ing ? ing.id : '';
+  document.getElementById('ing-name').value = ing ? ing.name : '';
+  populateSectionSelect(ing ? ing.section : (activeSection!=='All' && activeSection!==UNSECTIONED ? activeSection : null));
+
+  const kind = ing ? (ing.kind||'purchased') : 'purchased';
+  document.getElementById('ing-kind').value = kind;
+  setIngredientKindUI(kind);
+
+  document.getElementById('ing-receipt-name').value = ing && kind==='purchased' ? (ing.receiptName||'') : '';
+  document.getElementById('ing-category').value = ing && kind==='purchased' ? ing.category : 'weight';
+  populateUnitSelect(document.getElementById('ing-unit'), ing && kind==='purchased' ? ing.category : 'weight');
+  document.getElementById('ing-unit').value = ing && kind==='purchased' ? ing.purchaseUnit : 'lb';
+  document.getElementById('ing-qty').value = ing && kind==='purchased' ? ing.purchaseQty : '';
+  document.getElementById('ing-price').value = ing && kind==='purchased' ? ing.purchasePrice : '';
+
+  pendingSubLines = ing && ing.recipeLines ? JSON.parse(JSON.stringify(ing.recipeLines)) : [];
+  populateYieldUnitSelect(ing && kind==='recipe' ? ing.yieldUnit : 'oz');
+  document.getElementById('ing-yield-qty').value = ing && kind==='recipe' ? ing.yieldQty : '';
+  renderSubRecipeLines();
+  updateSubRecipePreview();
+
+  pendingCustomUnits = ing && ing.customUnits ? JSON.parse(JSON.stringify(ing.customUnits)) : [];
+  renderCustomUnitsEditor();
+
+  editingPhotoId = ing ? ing.photoId||null : null;
+  updatePhotoPreview();
+
+  document.getElementById('modal-ingredient').classList.add('active');
+}
+function updatePhotoPreview(){
+  const img = document.getElementById('ing-photo-preview');
+  const placeholder = document.getElementById('ing-photo-placeholder');
+  const rmBtn = document.getElementById('btn-remove-photo');
+  if(editingPhotoId){
+    photoURL(editingPhotoId).then(u=>{ img.src=u; img.hidden=false; placeholder.hidden=true; });
+    img.style.cursor = 'pointer';
+    img.onclick = ()=>showLightbox(editingPhotoId);
+    rmBtn.hidden = false;
+  } else {
+    img.hidden = true; placeholder.hidden = false; rmBtn.hidden = true;
+    img.onclick = null;
+  }
+}
+document.getElementById('btn-remove-photo').addEventListener('click', ()=>{ editingPhotoId=null; updatePhotoPreview(); });
+document.getElementById('btn-add-ingredient').addEventListener('click', ()=>openIngredientModal(null));
+document.getElementById('btn-cancel-ingredient').addEventListener('click', ()=>document.getElementById('modal-ingredient').classList.remove('active'));
+
+document.getElementById('btn-save-ingredient').addEventListener('click', async ()=>{
+  const name = document.getElementById('ing-name').value.trim();
+  if(!name){ toast('Name is required'); return; }
+  const id = document.getElementById('ing-id').value || uid();
+  const kind = document.getElementById('ing-kind').value;
+  const customUnits = pendingCustomUnits
+    .filter(c=>c.name && c.baseAmount!=='' && !isNaN(Number(c.baseAmount)))
+    .map(c=>({name:c.name.trim(), baseAmount:Number(c.baseAmount)}));
+
+  let ing;
+  if(kind==='recipe'){
+    const recipeLines = pendingSubLines.filter(l=>l.ingredientId && l.unit && l.qty!=='');
+    for(const line of recipeLines){
+      if(transitiveDeps(line.ingredientId).has(id)){
+        toast(`Can't add that — it would create a circular recipe (this recipe would depend on itself).`, {warning:true, duration:4000});
+        return;
+      }
+    }
+    const yieldUnit = document.getElementById('ing-yield-unit').value;
+    ing = {
+      id, name,
+      section: document.getElementById('ing-section').value,
+      kind: 'recipe',
+      category: UNIT_INFO[yieldUnit].cat,
+      recipeLines,
+      yieldQty: Number(document.getElementById('ing-yield-qty').value)||0,
+      yieldUnit,
+      customUnits,
+      photoId: null,
+    };
+  } else {
+    ing = {
+      id, name,
+      receiptName: document.getElementById('ing-receipt-name').value.trim() || null,
+      section: document.getElementById('ing-section').value,
+      kind: 'purchased',
+      category: document.getElementById('ing-category').value,
+      purchaseUnit: document.getElementById('ing-unit').value,
+      purchaseQty: Number(document.getElementById('ing-qty').value)||0,
+      purchasePrice: Number(document.getElementById('ing-price').value)||0,
+      customUnits,
+      photoId: editingPhotoId,
+    };
+  }
+  await idbPut('ingredients', ing);
+  const idx = ingredients.findIndex(i=>i.id===id);
+  if(idx>=0) ingredients[idx]=ing; else ingredients.push(ing);
+  document.getElementById('modal-ingredient').classList.remove('active');
+  renderIngredients();
+  renderMenu();
+  const alerted = checkPriceAlerts(id);
+  if(!alerted) toast('Ingredient saved');
+});
+
+/* ---------- Receipt scanning (direct to Anthropic) ---------- */
+const SCAN_PROMPT = `You are looking at a photo of a grocery or restaurant supply receipt.
+Extract every purchased line item (skip subtotal, tax, discounts, coupons, totals, and store/loyalty info).
+For each item return:
+- name: cleaned-up, human-readable product name (fix obvious receipt abbreviations)
+- price: the total price paid for that line, as a number (no currency symbol)
+- quantity: the purchased quantity as a number if the receipt shows one (e.g. weight or count), else 1
+- unit: the best matching unit from this exact list: g, kg, oz, lb, ml, l, tsp, tbsp, floz, cup, pt, qt, gal, each.
+  Use "each" for count-based items (cans, boxes, packs) with no weight/volume shown.
+
+Respond with ONLY a raw JSON array, no markdown fences, no commentary. Example:
+[{"name":"Roma Tomatoes","price":3.98,"quantity":2,"unit":"lb"},{"name":"Ketchup 32oz","price":3.49,"quantity":1,"unit":"each"}]
+If you can't find any purchasable line items, respond with [].`;
+const VALID_UNITS = new Set(['g','kg','oz','lb','ml','l','tsp','tbsp','floz','cup','pt','qt','gal','each']);
+
+function fileToBase64(file){
+  return new Promise((resolve,reject)=>{
+    const reader = new FileReader();
+    reader.onload = ()=>resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+function parseScanResponse(text){
+  text = text.trim().replace(/^```(json)?/,'').replace(/```$/,'').trim();
+  const items = JSON.parse(text);
+  return items.map(it=>{
+    const unit = VALID_UNITS.has(it.unit) ? it.unit : 'each';
+    return {
+      name: String(it.name||'').trim() || 'Unknown item',
+      price: Number(it.price)||0,
+      quantity: Number(it.quantity)||1,
+      unit,
+    };
+  });
+}
+async function scanReceiptImage(file){
+  const key = await getApiKey();
+  if(!key) throw new Error('No Anthropic API key configured. Add one in Settings.');
+  const b64 = await fileToBase64(file);
+  const mimeType = file.type || 'image/jpeg';
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{
+      'content-type':'application/json',
+      'x-api-key': key,
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-access':'true',
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 2000,
+      messages: [{
+        role:'user',
+        content:[
+          {type:'image', source:{type:'base64', media_type: mimeType, data: b64}},
+          {type:'text', text: SCAN_PROMPT},
+        ],
+      }],
+    }),
+  });
+  const result = await res.json();
+  if(!res.ok){
+    const msg = result && result.error ? result.error.message : ('Anthropic API error ' + res.status);
+    throw new Error(msg);
+  }
+  const items = parseScanResponse(result.content[0].text);
+  const photoId = await savePhotoBlob(file);
+  return {items, photoId};
+}
+
+/* ---------- Scan receipt ---------- */
+let scanItems = [];
+let scanPhotoId = null;
+
+document.getElementById('btn-scan-receipt').addEventListener('click', ()=>document.getElementById('scan-receipt-file').click());
+document.getElementById('scan-receipt-file').addEventListener('change', async e=>{
+  const file = e.target.files[0];
+  e.target.value = '';
+  if(!file) return;
+
+  openScanReviewLoading();
+  try{
+    const data = await scanReceiptImage(file);
+    scanItems = (data.items||[]).map(it=>{
+      const receiptName = it.name;
+      const existing = findExistingIngredientByReceiptText(receiptName);
+      return {
+        include: true,
+        receiptName,
+        name: existing ? existing.name : receiptName,
+        linkedIngredientId: existing ? existing.id : null,
+        qty: it.quantity,
+        unit: it.unit,
+        price: it.price,
+        section: existing ? existing.section : ((activeSection!=='All' && activeSection!==UNSECTIONED) ? activeSection : settings.sections[0]),
+      };
+    });
+    scanPhotoId = data.photoId;
+    if(scanItems.length===0){
+      document.getElementById('modal-scan-review').classList.remove('active');
+      toast('No items found on that receipt');
+      return;
+    }
+    renderScanReviewRows();
+  }catch(err){
+    document.getElementById('modal-scan-review').classList.remove('active');
+    toast(err.message || 'Scan failed');
+  }
+});
+
+function openScanReviewLoading(){
+  const container = document.getElementById('scan-review-rows');
+  container.innerHTML = `<div class="scan-loading">🔎 Reading receipt…<br>This can take a few seconds.</div>`;
+  document.getElementById('modal-scan-review').classList.add('active');
+}
+
+function findExistingIngredientByReceiptText(text){
+  const norm = (text||'').trim().toLowerCase();
+  if(!norm) return null;
+  return ingredients.find(i=>(i.receiptName||i.name||'').trim().toLowerCase()===norm) || null;
+}
+
+function renderScanReviewRows(){
+  const container = document.getElementById('scan-review-rows');
+  container.innerHTML = '';
+  scanItems.forEach((item, idx)=>{
+    const row = document.createElement('div');
+    row.className = 'scan-row' + (item.include ? '' : ' excluded');
+
+    const check = document.createElement('input'); check.type='checkbox'; check.checked = item.include;
+    check.addEventListener('change', e2=>{ item.include = e2.target.checked; row.classList.toggle('excluded', !item.include); });
+
+    const nameWrap = document.createElement('div'); nameWrap.style.cssText='display:flex;flex-direction:column;flex:1 1 140px;gap:2px;';
+    const nameInput = document.createElement('input'); nameInput.className='scan-name'; nameInput.style.flex='none'; nameInput.value=item.name;
+    nameInput.addEventListener('input', e2=>{ item.name=e2.target.value; });
+
+    const rawLabel = document.createElement('span'); rawLabel.style.cssText='font-size:11px;color:var(--muted);';
+    if(item.receiptName && item.receiptName.trim().toLowerCase()!==item.name.trim().toLowerCase()){
+      rawLabel.textContent = `Receipt: "${item.receiptName}"`;
+    }
+
+    const badgeRow = document.createElement('div'); badgeRow.style.cssText='display:flex;align-items:center;gap:6px;flex-wrap:wrap;';
+    const matchBadge = document.createElement('span'); matchBadge.style.cssText='font-size:11px;';
+    const linkBtn = document.createElement('button'); linkBtn.type='button'; linkBtn.className='link-btn'; linkBtn.style.cssText='font-size:11px;padding:0;';
+    const linkSelect = document.createElement('select'); linkSelect.style.cssText='font-size:12px;padding:2px 4px;min-height:auto;width:auto;';
+    linkSelect.hidden = true;
+    linkSelect.innerHTML = `<option value="">Choose ingredient…</option>` + ingredients.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(i=>`<option value="${i.id}">${i.name}</option>`).join('');
+
+    const refreshMatchUI = ()=>{
+      const linked = item.linkedIngredientId ? ingredients.find(i=>i.id===item.linkedIngredientId) : null;
+      if(linked){
+        matchBadge.textContent = '🔄 updates existing';
+        matchBadge.style.color = 'var(--accent)';
+        linkBtn.textContent = 'Unlink';
+        linkSelect.hidden = true;
+      } else {
+        matchBadge.textContent = '✨ new ingredient';
+        matchBadge.style.color = 'var(--muted)';
+        linkBtn.textContent = 'Link to existing…';
+      }
+    };
+    linkBtn.addEventListener('click', ()=>{
+      const linked = item.linkedIngredientId ? ingredients.find(i=>i.id===item.linkedIngredientId) : null;
+      if(linked){
+        item.linkedIngredientId = null;
+        item.name = item.receiptName;
+        nameInput.value = item.name;
+        refreshMatchUI();
+      } else {
+        linkSelect.hidden = !linkSelect.hidden;
+      }
+    });
+    linkSelect.addEventListener('change', e2=>{
+      const val = e2.target.value;
+      if(val){
+        item.linkedIngredientId = val;
+        const linked = ingredients.find(i=>i.id===val);
+        item.name = linked.name;
+        nameInput.value = linked.name;
+      }
+      refreshMatchUI();
+    });
+    refreshMatchUI();
+    badgeRow.appendChild(matchBadge); badgeRow.appendChild(linkBtn); badgeRow.appendChild(linkSelect);
+
+    nameWrap.appendChild(nameInput);
+    if(rawLabel.textContent) nameWrap.appendChild(rawLabel);
+    nameWrap.appendChild(badgeRow);
+
+    const qtyInput = document.createElement('input'); qtyInput.className='scan-qty'; qtyInput.type='number'; qtyInput.step='any'; qtyInput.value=item.qty;
+    qtyInput.addEventListener('input', e2=>item.qty=e2.target.value);
+
+    const unitSelect = document.createElement('select'); unitSelect.className='scan-unit';
+    Object.keys(UNIT_INFO).forEach(u=>{
+      const opt = document.createElement('option'); opt.value=u; opt.textContent=UNIT_INFO[u].label;
+      if(u===item.unit) opt.selected = true;
+      unitSelect.appendChild(opt);
+    });
+    unitSelect.addEventListener('change', e2=>item.unit=e2.target.value);
+
+    const priceInput = document.createElement('input'); priceInput.className='scan-price'; priceInput.type='number'; priceInput.step='0.01'; priceInput.value=item.price;
+    priceInput.addEventListener('input', e2=>item.price=e2.target.value);
+
+    const sectionSelect = document.createElement('select'); sectionSelect.className='scan-section';
+    settings.sections.forEach(s=>{
+      const opt = document.createElement('option'); opt.value=s; opt.textContent=s;
+      if(s===item.section) opt.selected = true;
+      sectionSelect.appendChild(opt);
+    });
+    sectionSelect.addEventListener('change', e2=>item.section=e2.target.value);
+
+    row.appendChild(check); row.appendChild(nameWrap); row.appendChild(qtyInput); row.appendChild(unitSelect); row.appendChild(priceInput); row.appendChild(sectionSelect);
+    container.appendChild(row);
+  });
+}
+
+document.getElementById('btn-cancel-scan-review').addEventListener('click', ()=>{
+  document.getElementById('modal-scan-review').classList.remove('active');
+});
+
+document.getElementById('btn-add-scanned').addEventListener('click', async ()=>{
+  const toAdd = scanItems.filter(i=>i.include && i.name.trim());
+  if(toAdd.length===0){ document.getElementById('modal-scan-review').classList.remove('active'); return; }
+  let created = 0, updated = 0;
+  const updatedIds = [];
+  for(const item of toAdd){
+    const category = UNIT_INFO[item.unit] ? UNIT_INFO[item.unit].cat : 'count';
+    const existing = item.linkedIngredientId ? ingredients.find(i=>i.id===item.linkedIngredientId) : null;
+    if(existing){
+      const ing = {
+        ...existing,
+        name: item.name.trim() || existing.name,
+        receiptName: item.receiptName || existing.receiptName,
+        category,
+        purchaseUnit: item.unit,
+        purchaseQty: Number(item.qty)||1,
+        purchasePrice: Number(item.price)||0,
+        photoId: scanPhotoId,
+      };
+      await idbPut('ingredients', ing);
+      const idx = ingredients.findIndex(i=>i.id===existing.id);
+      ingredients[idx] = ing;
+      updated++;
+      updatedIds.push(existing.id);
+    } else {
+      const id = uid();
+      const ing = {
+        id,
+        name: item.name.trim(),
+        receiptName: item.receiptName || null,
+        section: item.section,
+        category,
+        purchaseUnit: item.unit,
+        purchaseQty: Number(item.qty)||1,
+        purchasePrice: Number(item.price)||0,
+        customUnits: [],
+        photoId: scanPhotoId,
+      };
+      await idbPut('ingredients', ing);
+      ingredients.push(ing);
+      created++;
+    }
+  }
+  document.getElementById('modal-scan-review').classList.remove('active');
+  renderIngredients();
+  renderMenu();
+  let alerted = false;
+  for(const id of updatedIds){ if(checkPriceAlerts(id)) alerted = true; }
+  if(!alerted){
+    const parts = [];
+    if(created) parts.push(`added ${created}`);
+    if(updated) parts.push(`updated ${updated}`);
+    toast(parts.join(', ') || 'No changes');
+  }
+});
+
+/* ---------- Photo capture ---------- */
+document.getElementById('btn-take-photo').addEventListener('click', ()=>document.getElementById('ing-photo-camera').click());
+document.getElementById('ing-photo-camera').addEventListener('change', async e=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const id = await savePhotoBlob(file);
+  editingPhotoId = id;
+  updatePhotoPreview();
+  e.target.value = '';
+});
+
+document.getElementById('btn-upload-photo').addEventListener('click', ()=>document.getElementById('ing-photo-file').click());
+document.getElementById('ing-photo-file').addEventListener('change', async e=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const id = await savePhotoBlob(file);
+  editingPhotoId = id;
+  updatePhotoPreview();
+  e.target.value = '';
+});
+
+/* ---------- Menu items rendering ---------- */
+function computeMenuTotals(item){
+  const cogs = (item.lines||[]).reduce((sum,line)=>{
+    const ing = ingredients.find(i=>i.id===line.ingredientId);
+    if(!ing) return sum;
+    return sum + lineCost(ing, line.qty, line.unit);
+  },0);
+  const pct = Number(item.targetPct)||settings.targetPct||30;
+  const target = pct>0 ? cogs/(pct/100) : 0;
+  let actualPct = null, margin = null, variancePct = null;
+  if(item.actualPrice){
+    actualPct = (cogs/Number(item.actualPrice))*100;
+    margin = Number(item.actualPrice) - cogs;
+    variancePct = target>0 ? ((Number(item.actualPrice)-target)/target)*100 : null;
+  }
+  return {cogs, target, actualPct, margin, variancePct};
+}
+
+function checkPriceAlerts(ingredientId){
+  const affected = menuItems.filter(m=>(m.lines||[]).some(l=>transitiveDeps(l.ingredientId).has(ingredientId)));
+  const warnings = [];
+  for(const item of affected){
+    const {target, variancePct} = computeMenuTotals(item);
+    if(item.actualPrice && variancePct!==null && variancePct < -0.5){
+      warnings.push(`⚠️ ${item.name}: priced ${fmt(item.actualPrice)}, below target ${fmt(target)} (${variancePct.toFixed(1)}%)`);
+    }
+  }
+  if(warnings.length){
+    toast(warnings.join('\n'), {warning:true, duration: 4000 + warnings.length*1200});
+    return true;
+  }
+  return false;
+}
+
+async function renderMenu(){
+  const body = document.getElementById('menu-body');
+  body.innerHTML = '';
+  document.getElementById('menu-count').textContent = menuItems.length + (menuItems.length===1?' menu item':' menu items');
+  document.getElementById('menu-empty').hidden = menuItems.length>0;
+
+  for(const item of menuItems.slice().sort((a,b)=>a.name.localeCompare(b.name))){
+    const {cogs, target, actualPct, variancePct} = computeMenuTotals(item);
+    const tr = document.createElement('tr');
+    const nameTd = document.createElement('td'); nameTd.textContent = item.name; tr.appendChild(nameTd);
+    const cogsTd = document.createElement('td'); cogsTd.className='num'; cogsTd.textContent = fmt(cogs); tr.appendChild(cogsTd);
+    const targetTd = document.createElement('td'); targetTd.className='num'; targetTd.textContent = fmt(target); tr.appendChild(targetTd);
+    const actualTd = document.createElement('td'); actualTd.className='num'; actualTd.textContent = item.actualPrice ? fmt(item.actualPrice) : '—'; tr.appendChild(actualTd);
+
+    const varianceTd = document.createElement('td'); varianceTd.className='num';
+    if(variancePct!==null){
+      const sign = variancePct>=0 ? '+' : '';
+      varianceTd.textContent = `${sign}${variancePct.toFixed(1)}%`;
+      varianceTd.style.color = variancePct >= 0 ? 'var(--good)' : 'var(--bad)';
+      varianceTd.style.fontWeight = '600';
+      varianceTd.title = variancePct>=0 ? 'Priced above target' : 'Priced below target — losing margin vs plan';
+    } else {
+      varianceTd.textContent = '—';
+    }
+    tr.appendChild(varianceTd);
+
+    const pctTd = document.createElement('td'); pctTd.className='num';
+    pctTd.textContent = actualPct!==null ? actualPct.toFixed(1)+'%' : '—';
+    pctTd.style.color = actualPct!==null ? (actualPct <= (Number(item.targetPct)||settings.targetPct) ? 'var(--good)' : 'var(--bad)') : '';
+    tr.appendChild(pctTd);
+
+    const actionsTd = document.createElement('td'); actionsTd.className='row-actions';
+    const editBtn = document.createElement('button'); editBtn.textContent='✏️';
+    editBtn.addEventListener('click', ()=>openMenuModal(item));
+    const delBtn = document.createElement('button'); delBtn.textContent='🗑';
+    delBtn.addEventListener('click', async ()=>{
+      if(confirm(`Delete "${item.name}"?`)){
+        await idbDelete('menuItems', item.id);
+        menuItems = menuItems.filter(m=>m.id!==item.id);
+        renderMenu();
+        toast('Menu item deleted');
+      }
+    });
+    actionsTd.appendChild(editBtn); actionsTd.appendChild(delBtn);
+    tr.appendChild(actionsTd);
+
+    body.appendChild(tr);
+  }
+}
+
+/* ---------- Menu modal ---------- */
+let pendingLines = [];
+
+function ingredientOptionsHTML(selectedId, excludeIds){
+  const exclude = excludeIds || new Set();
+  return ingredients.slice().filter(i=>!exclude.has(i.id) || i.id===selectedId).sort((a,b)=>a.name.localeCompare(b.name)).map(i=>
+    `<option value="${i.id}" ${i.id===selectedId?'selected':''}>${i.kind==='recipe'?'🥣 ':''}${i.name}</option>`
+  ).join('');
+}
+function unitOptionsHTML(ing, selectedUnit){
+  if(!ing) return '';
+  return unitsAvailableFor(ing).map(u=>{
+    const label = UNIT_INFO[u] ? UNIT_INFO[u].label : u;
+    return `<option value="${u}" ${u===selectedUnit?'selected':''}>${label}</option>`;
+  }).join('');
+}
+
+function renderRecipeLines(){
+  const container = document.getElementById('recipe-lines');
+  container.innerHTML = '';
+  pendingLines.forEach((line, idx)=>{
+    const ing = ingredients.find(i=>i.id===line.ingredientId);
+    const row = document.createElement('div'); row.className='recipe-line';
+
+    const sel = document.createElement('select');
+    sel.innerHTML = `<option value="">Select ingredient…</option>` + ingredientOptionsHTML(line.ingredientId);
+    sel.addEventListener('change', e=>{ line.ingredientId = e.target.value; line.unit=''; renderRecipeLines(); });
+
+    const qty = document.createElement('input'); qty.type='number'; qty.step='any'; qty.placeholder='qty'; qty.value = line.qty||'';
+    qty.addEventListener('input', e=>{ line.qty=e.target.value; updateMenuTotalsPreview(); });
+
+    const unitSel = document.createElement('select');
+    unitSel.innerHTML = ing ? unitOptionsHTML(ing, line.unit) : '';
+    unitSel.addEventListener('change', e=>{ line.unit=e.target.value; updateMenuTotalsPreview(); });
+
+    const costSpan = document.createElement('div'); costSpan.className='muted num';
+    costSpan.textContent = ing ? fmt(lineCost(ing, line.qty, line.unit || unitsAvailableFor(ing)[0])) : '';
+
+    const rmBtn = document.createElement('button'); rmBtn.className='link-btn'; rmBtn.textContent='✕';
+    rmBtn.addEventListener('click', ()=>{ pendingLines.splice(idx,1); renderRecipeLines(); updateMenuTotalsPreview(); });
+
+    row.appendChild(sel); row.appendChild(qty); row.appendChild(unitSel); row.appendChild(costSpan); row.appendChild(rmBtn);
+    container.appendChild(row);
+  });
+}
+document.getElementById('btn-add-line').addEventListener('click', ()=>{
+  pendingLines.push({ingredientId:'', qty:'', unit:''});
+  renderRecipeLines();
+});
+
+function updateMenuTotalsPreview(){
+  const cogs = pendingLines.reduce((sum,line)=>{
+    const ing = ingredients.find(i=>i.id===line.ingredientId);
+    if(!ing || !line.unit) return sum;
+    return sum + lineCost(ing, line.qty, line.unit);
+  },0);
+  const pct = Number(document.getElementById('menu-target-pct').value)||settings.targetPct||30;
+  const target = pct>0 ? cogs/(pct/100) : 0;
+  document.getElementById('calc-cogs').textContent = fmt(cogs);
+  document.getElementById('calc-target').textContent = fmt(target);
+  const actualPrice = Number(document.getElementById('menu-actual-price').value);
+  const rowActual = document.getElementById('row-actual');
+  const rowMargin = document.getElementById('row-margin');
+  const rowVariance = document.getElementById('row-variance');
+  if(actualPrice>0){
+    const actualPct = (cogs/actualPrice)*100;
+    const margin = actualPrice - cogs;
+    const variancePct = target>0 ? ((actualPrice-target)/target)*100 : null;
+    rowActual.hidden=false; rowMargin.hidden=false; rowVariance.hidden=false;
+    document.getElementById('calc-actual-pct').textContent = actualPct.toFixed(1)+'%';
+    document.getElementById('calc-actual-pct').style.background = actualPct<=pct ? 'color-mix(in srgb, var(--good) 25%, transparent)' : 'color-mix(in srgb, var(--bad) 25%, transparent)';
+    document.getElementById('calc-margin').textContent = fmt(margin);
+    const varEl = document.getElementById('calc-variance-pct');
+    if(variancePct!==null){
+      varEl.textContent = (variancePct>=0?'+':'') + variancePct.toFixed(1) + '%';
+      varEl.style.background = variancePct>=0 ? 'color-mix(in srgb, var(--good) 25%, transparent)' : 'color-mix(in srgb, var(--bad) 25%, transparent)';
+    } else {
+      varEl.textContent = '—';
+    }
+  } else {
+    rowActual.hidden=true; rowMargin.hidden=true; rowVariance.hidden=true;
+  }
+}
+document.getElementById('menu-target-pct').addEventListener('input', updateMenuTotalsPreview);
+document.getElementById('menu-actual-price').addEventListener('input', updateMenuTotalsPreview);
+
+function openMenuModal(item){
+  document.getElementById('menu-modal-title').textContent = item ? 'Edit Menu Item' : 'Add Menu Item';
+  document.getElementById('menu-id').value = item ? item.id : '';
+  document.getElementById('menu-name').value = item ? item.name : '';
+  document.getElementById('menu-target-pct').value = item ? item.targetPct : settings.targetPct;
+  document.getElementById('menu-actual-price').value = item ? (item.actualPrice||'') : '';
+  pendingLines = item && item.lines ? JSON.parse(JSON.stringify(item.lines)) : [];
+  renderRecipeLines();
+  updateMenuTotalsPreview();
+  document.getElementById('modal-menu').classList.add('active');
+}
+document.getElementById('btn-add-menu').addEventListener('click', ()=>openMenuModal(null));
+document.getElementById('btn-cancel-menu').addEventListener('click', ()=>document.getElementById('modal-menu').classList.remove('active'));
+
+document.getElementById('btn-save-menu').addEventListener('click', async ()=>{
+  const name = document.getElementById('menu-name').value.trim();
+  if(!name){ toast('Name is required'); return; }
+  const id = document.getElementById('menu-id').value || uid();
+  const lines = pendingLines.filter(l=>l.ingredientId && l.unit && l.qty!=='');
+  const item = {
+    id, name,
+    targetPct: Number(document.getElementById('menu-target-pct').value)||settings.targetPct,
+    actualPrice: Number(document.getElementById('menu-actual-price').value)||null,
+    lines,
+  };
+  await idbPut('menuItems', item);
+  const idx = menuItems.findIndex(m=>m.id===id);
+  if(idx>=0) menuItems[idx]=item; else menuItems.push(item);
+  document.getElementById('modal-menu').classList.remove('active');
+  renderMenu();
+  toast('Menu item saved');
+});
+
+/* ---------- Settings ---------- */
+async function saveSettings(){
+  await idbPut('settings', {key:'settings', value: settings});
+}
+document.getElementById('setting-target-pct').addEventListener('change', async e=>{
+  settings.targetPct = Number(e.target.value)||30;
+  await saveSettings();
+  toast('Settings saved');
+});
+
+function renderSectionsList(){
+  const container = document.getElementById('sections-list');
+  container.innerHTML = '';
+  settings.sections.forEach((name, idx)=>{
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:8px;align-items:center;';
+    const input = document.createElement('input');
+    input.value = name;
+    input.style.cssText = 'border:1px solid var(--border);flex:1;';
+    input.addEventListener('change', async e2=>{
+      const newName = e2.target.value.trim();
+      const oldName = settings.sections[idx];
+      if(!newName){ e2.target.value = oldName; return; }
+      if(newName===oldName) return;
+      if(settings.sections.includes(newName)){ toast('That section already exists'); e2.target.value = oldName; return; }
+      settings.sections[idx] = newName;
+      await saveSettings();
+      const affected = ingredients.filter(i=>i.section===oldName);
+      for(const ing of affected){ ing.section = newName; await idbPut('ingredients', ing); }
+      renderSectionsList();
+      renderIngredients();
+      toast('Section renamed');
+    });
+    const rmBtn = document.createElement('button');
+    rmBtn.className = 'link-btn'; rmBtn.type = 'button'; rmBtn.textContent = '✕';
+    rmBtn.addEventListener('click', async ()=>{
+      if(!confirm(`Remove "${name}" section? Its ingredients will show under Uncategorized.`)) return;
+      settings.sections.splice(idx,1);
+      await saveSettings();
+      renderSectionsList();
+      renderIngredients();
+      toast('Section removed');
+    });
+    row.appendChild(input); row.appendChild(rmBtn);
+    container.appendChild(row);
+  });
+}
+document.getElementById('btn-add-section').addEventListener('click', async ()=>{
+  const input = document.getElementById('new-section-name');
+  const name = input.value.trim();
+  if(!name) return;
+  if(settings.sections.includes(name)){ toast('That section already exists'); return; }
+  settings.sections.push(name);
+  await saveSettings();
+  input.value = '';
+  renderSectionsList();
+  renderIngredients();
+  toast('Section added');
+});
+
+async function refreshConfigStatus(){
+  const status = document.getElementById('config-status');
+  try{
+    const hasKey = !!(await getApiKey());
+    status.textContent = hasKey ? '✓ Anthropic key configured' : '✗ No Anthropic key set — receipt scanning needs one';
+    status.style.color = hasKey ? 'var(--good)' : 'var(--bad)';
+  }catch(err){
+    status.textContent = 'Could not check scanning status.';
+  }
+}
+document.getElementById('btn-save-key').addEventListener('click', async ()=>{
+  const input = document.getElementById('anthropic-key-input');
+  const key = input.value.trim();
+  if(!key){ toast('Paste a key first'); return; }
+  await setApiKey(key);
+  input.value = '';
+  await refreshConfigStatus();
+  toast('API key saved');
+});
+
+document.getElementById('btn-export').addEventListener('click', async ()=>{
+  const data = await idbExportData();
+  data.exportedAt = new Date().toISOString();
+  const blob = new Blob([JSON.stringify(data)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `moola-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  toast('Exported');
+});
+
+document.getElementById('btn-import').addEventListener('click', ()=>document.getElementById('import-file').click());
+document.getElementById('import-file').addEventListener('change', async e=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const text = await file.text();
+  const data = JSON.parse(text);
+  if(!confirm('This will replace all current data with the imported backup. Continue?')) { e.target.value=''; return; }
+  await idbImportData(data);
+  await loadAll();
+  renderIngredients(); renderMenu(); renderSectionsList();
+  document.getElementById('setting-target-pct').value = settings.targetPct;
+  toast('Import complete');
+  e.target.value='';
+});
+
+/* ---------- init ---------- */
+(async function init(){
+  await loadAll();
+  document.getElementById('setting-target-pct').value = settings.targetPct;
+  populateUnitSelect(document.getElementById('ing-unit'), 'weight');
+  renderIngredients();
+  renderMenu();
+  renderSectionsList();
+  refreshConfigStatus();
+  setInterval(async ()=>{
+    if(document.querySelector('.modal-backdrop.active')) return;
+    await loadAll();
+    renderIngredients();
+    renderMenu();
+  }, 4000);
+})();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+
+})();
+</script>
+</body>
+</html>
