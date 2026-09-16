@@ -24,7 +24,8 @@
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
-  header{display:flex;align-items:center;justify-content:center;padding:calc(20px + env(safe-area-inset-top, 0px)) 24px 18px;background:radial-gradient(120% 180% at 50% -20%, color-mix(in srgb, var(--accent) 20%, transparent), var(--panel) 65%);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;overflow:hidden;}
+  header{display:flex;align-items:center;justify-content:center;padding:calc(20px + env(safe-area-inset-top, 0px)) 24px 18px;background:radial-gradient(120% 180% at 50% -20%, color-mix(in srgb, var(--accent) 20%, transparent), var(--panel) 65%);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;overflow:hidden;cursor:pointer;}
+  header:active{opacity:.85;}
   header h1{font-size:19px;margin:0;letter-spacing:.2px;font-weight:700;display:flex;align-items:center;}
   header h1 img{height:76px;width:auto;display:block;transform:rotate(-2deg);filter:drop-shadow(0 6px 10px color-mix(in srgb, var(--accent) 35%, transparent));}
   .tabbar{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--panel);border-top:1px solid var(--border);padding:8px 6px calc(8px + env(safe-area-inset-bottom, 0px));z-index:10;}
@@ -108,7 +109,7 @@
 </head>
 <body>
 
-<header>
+<header id="app-header" title="Tap to refresh">
   <h1><img src="icons/header-logo.png" alt="Moola"></h1>
 </header>
 
@@ -542,6 +543,8 @@ document.querySelectorAll('nav button').forEach(btn=>{
     document.getElementById('view-'+btn.dataset.view).classList.add('active');
   });
 });
+
+document.getElementById('app-header').addEventListener('click', ()=>location.reload());
 
 /* ---------- photo helpers ---------- */
 const photoURLCache = new Map();
