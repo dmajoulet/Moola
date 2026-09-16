@@ -500,7 +500,7 @@ const UNSECTIONED = 'Uncategorized';
 let ingredients = [];
 let menuItems = [];
 let settings = { targetPct: 30, sections: DEFAULT_SECTIONS.slice() };
-let activeSection = 'All';
+let activeSections = new Set();
 let ingredientSort = 'name-asc';
 const INGREDIENT_SORTS = {
   'name-asc':  (a,b)=>a.name.localeCompare(b.name),
@@ -587,25 +587,48 @@ function sectionIcon(sectionName){
   }
   return '🍽️';
 }
+function singleActiveSection(){
+  if(activeSections.size===1){
+    const only = [...activeSections][0];
+    if(only!==UNSECTIONED) return only;
+  }
+  return null;
+}
 function renderIngredientTabs(){
   const container = document.getElementById('ingredient-section-tabs');
   container.innerHTML = '';
   const hasUnsectioned = ingredients.some(i => ingredientSection(i)===UNSECTIONED);
-  const tabs = ['All', ...settings.sections, ...(hasUnsectioned ? [UNSECTIONED] : [])];
-  if(!tabs.includes(activeSection)) activeSection = 'All';
-  tabs.forEach(name=>{
-    const btn = document.createElement('button');
-    btn.className = 'section-tab' + (activeSection===name ? ' active':'');
-    btn.textContent = name;
-    btn.addEventListener('click', ()=>{ activeSection = name; renderIngredients(); });
-    container.appendChild(btn);
+  const names = [...settings.sections, ...(hasUnsectioned ? [UNSECTIONED] : [])];
+  for(const s of [...activeSections]){ if(!names.includes(s)) activeSections.delete(s); }
+
+  const allBtn = document.createElement('button');
+  allBtn.className = 'section-tab' + (activeSections.size===0 ? ' active':'');
+  allBtn.textContent = 'All';
+  allBtn.addEventListener('click', ()=>{ activeSections.clear(); renderIngredients(); });
+  container.appendChild(allBtn);
+
+  names.forEach(name=>{
+    const label = document.createElement('label');
+    label.className = 'section-tab' + (activeSections.has(name) ? ' active':'');
+    label.style.cssText = 'display:inline-flex;align-items:center;gap:6px;';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = activeSections.has(name);
+    cb.style.cssText = 'width:auto;min-height:auto;margin:0;accent-color:var(--accent);';
+    cb.addEventListener('change', ()=>{
+      if(cb.checked) activeSections.add(name); else activeSections.delete(name);
+      renderIngredients();
+    });
+    label.appendChild(cb);
+    label.appendChild(document.createTextNode(name));
+    container.appendChild(label);
   });
 }
 async function renderIngredients(){
   renderIngredientTabs();
   const body = document.getElementById('ingredients-body');
   body.innerHTML = '';
-  const filtered = activeSection==='All' ? ingredients : ingredients.filter(i=>ingredientSection(i)===activeSection);
+  const filtered = activeSections.size===0 ? ingredients : ingredients.filter(i=>activeSections.has(ingredientSection(i)));
   document.getElementById('ing-count').textContent = filtered.length + (filtered.length===1?' ingredient':' ingredients');
   document.getElementById('ingredients-empty').hidden = filtered.length>0;
 
@@ -814,7 +837,7 @@ function openIngredientModal(ing){
   document.getElementById('ingredient-modal-title').textContent = ing ? 'Edit Ingredient' : 'Add Ingredient';
   document.getElementById('ing-id').value = ing ? ing.id : '';
   document.getElementById('ing-name').value = ing ? ing.name : '';
-  populateSectionSelect(ing ? ing.section : (activeSection!=='All' && activeSection!==UNSECTIONED ? activeSection : null));
+  populateSectionSelect(ing ? ing.section : singleActiveSection());
 
   const kind = ing ? (ing.kind||'purchased') : 'purchased';
   document.getElementById('ing-kind').value = kind;
@@ -1008,7 +1031,7 @@ document.getElementById('scan-receipt-file').addEventListener('change', async e=
         qty: it.quantity,
         unit: it.unit,
         price: it.price,
-        section: existing ? existing.section : ((activeSection!=='All' && activeSection!==UNSECTIONED) ? activeSection : settings.sections[0]),
+        section: existing ? existing.section : (singleActiveSection() || settings.sections[0]),
       };
     });
     scanPhotoId = data.photoId;
