@@ -675,7 +675,9 @@ async function renderIngredients(){
     tr.appendChild(priceTd);
 
     const costTd = document.createElement('td'); costTd.className='num';
-    costTd.textContent = `${fmt(costPerBase)} / ${baseLabel}`;
+    const displayUnit = ing.kind==='recipe' ? ing.yieldUnit : ing.purchaseUnit;
+    const costPerDisplayUnit = costPerBase * (UNIT_INFO[displayUnit]?.toBase || 1);
+    costTd.textContent = `${fmt(costPerDisplayUnit)} / ${UNIT_INFO[displayUnit].label}`;
     tr.appendChild(costTd);
 
     const customTd = document.createElement('td'); customTd.className='muted';
